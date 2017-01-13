@@ -4,3 +4,4 @@ import:
   version: ^1.0.0
   subpackages:
   - statsd
+- package: github.com/nicholasjackson/bench

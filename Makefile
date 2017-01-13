@@ -4,3 +4,6 @@ build:
 
 run: build
 	docker-compose up --build
+
+test:
+	go run ./bench/main.go

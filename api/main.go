@@ -11,18 +11,18 @@ import (
 
 var statsD *statsd.Client
 
-type Kitten struct {
+type kitten struct {
 	Name          string `json:"name"`
 	Weight        int    `json:"weight"`
 	FavouriteFood string `json:"favouriteFood,omitempty"`
 }
 
-var kittens []Kitten = []Kitten{
-	Kitten{
+var kittens = []kitten{
+	kitten{
 		Name:   "Benny",
 		Weight: 23,
 	},
-	Kitten{
+	kitten{
 		Name:   "Fat Freddy's Cat",
 		Weight: 50,
 	},

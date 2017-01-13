@@ -1,8 +1,10 @@
-hash: 62bd7c3a49b69fc74f4c32f7c5bf9d21eb0a9f570999d981791f566a6cc0f715
-updated: 2017-01-13T11:56:35.605437024Z
+hash: fb4c6b090c7d873fd98d5e23ac348a1eb9116de5bb6cac75e634d22c92a2e626
+updated: 2017-01-13T13:49:34.539143906-05:00
 imports:
 - name: github.com/DataDog/datadog-go
   version: 909c02b65dd8a52e8fa6072db9752a112227cf21
   subpackages:
   - statsd
+- name: github.com/nicholasjackson/bench
+  version: dddfd8d49012b43e6621c9e63f1734cee44528f9
 testImports: []
