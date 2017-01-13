@@ -1,0 +1,6 @@
+package: github.com/nicholasjackson/golab
+import:
+- package: github.com/DataDog/datadog-go
+  version: ^1.0.0
+  subpackages:
+  - statsd

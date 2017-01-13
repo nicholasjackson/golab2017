@@ -1,0 +1,8 @@
+hash: 62bd7c3a49b69fc74f4c32f7c5bf9d21eb0a9f570999d981791f566a6cc0f715
+updated: 2017-01-13T11:56:35.605437024Z
+imports:
+- name: github.com/DataDog/datadog-go
+  version: 909c02b65dd8a52e8fa6072db9752a112227cf21
+  subpackages:
+  - statsd
+testImports: []
