@@ -1,0 +1,16 @@
+version: "2"
+services:
+  api:
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    links:
+      - currency
+  currency:
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "9091:9091"

@@ -1,0 +1,10 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 30s
+
+scrape_configs:
+# The job name assigned to scraped metrics by default.
+- job_name: statsd
+  
+  static_configs:
+  - targets: ['statsd:9102']
