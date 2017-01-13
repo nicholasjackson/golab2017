@@ -1,6 +1,6 @@
 global:
   scrape_interval:     15s
-  evaluation_interval: 30s
+  evaluation_interval: 15s
 
 scrape_configs:
 # The job name assigned to scraped metrics by default.
@@ -8,3 +8,7 @@ scrape_configs:
   
   static_configs:
   - targets: ['statsd:9102']
+  
+- job_name: 'prometheus'
+  static_configs:
+  - targets: ['localhost:9090']
