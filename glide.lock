@@ -1,10 +1,43 @@
 hash: fb4c6b090c7d873fd98d5e23ac348a1eb9116de5bb6cac75e634d22c92a2e626
-updated: 2017-01-13T13:49:34.539143906-05:00
+updated: 2017-01-14T12:32:48.28834533Z
 imports:
+- name: github.com/blendlabs/go-exception
+  version: 3016f62c905ec9aab528104ef58ac4f5cd395a22
 - name: github.com/DataDog/datadog-go
   version: 909c02b65dd8a52e8fa6072db9752a112227cf21
   subpackages:
   - statsd
+- name: github.com/fatih/color
+  version: 34e4ee095d12986a2cef5ddb9aeb3b8cfcfea17c
+- name: github.com/golang/freetype
+  version: d9be45aaf7452cc30c0ceb1b1bf7efe1d17b7c87
+  subpackages:
+  - raster
+  - truetype
+- name: github.com/mattn/go-colorable
+  version: d228849504861217f796da67fae4f6e347643f15
+- name: github.com/mattn/go-isatty
+  version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
 - name: github.com/nicholasjackson/bench
-  version: dddfd8d49012b43e6621c9e63f1734cee44528f9
+  version: 66694b357256efb8de8e453332fd21b394894337
+  subpackages:
+  - errors
+  - output
+  - results
+  - semaphore
+- name: github.com/wcharczuk/go-chart
+  version: fc2973067ce43455507ea5f9aa9814aabbf8f2ca
+  subpackages:
+  - drawing
+- name: golang.org/x/image
+  version: 1ff62c92167a10494f3e0b1e77cb67860a6ac43a
+  subpackages:
+  - draw
+  - font
+  - math/f64
+  - math/fixed
+- name: golang.org/x/sys
+  version: e82cb4d7dffc35bcec7bc8bf9e402377e0ecf3f4
+  subpackages:
+  - unix
 testImports: []

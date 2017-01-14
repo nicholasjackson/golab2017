@@ -5,5 +5,8 @@ build:
 run: build
 	docker-compose up --build
 
+run_slow: build
+	SLEEP_TIME=0.03 docker-compose up --build
+
 test:
 	go run ./bench/main.go

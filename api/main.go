@@ -48,7 +48,7 @@ func handleList(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	statsD.Timing("golab2017.api.list.timing", time.Now().Sub(startTime), []string{"golab2017"}, 1)
-	statsD.Incr("golab2017.api.list.called", []string{"golab2017"}, 1)
+	statsD.Incr("golab2017.api.list.success", []string{"golab2017"}, 1)
 }
 
 func handleDetail(rw http.ResponseWriter, r *http.Request) {
@@ -60,7 +60,7 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 
 		rw.WriteHeader(http.StatusInternalServerError)
-		statsD.Incr("golab2017.api.detail.called", []string{"golab2017"}, 1)
+		statsD.Incr("golab2017.api.detail.error", []string{"golab2017"}, 1)
 		return
 	}
 	defer res.Body.Close()
@@ -68,12 +68,12 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(rw).Encode(kittens[0])
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
-		statsD.Incr("golab2017.api.detail.called", []string{"golab2017"}, 1)
+		statsD.Incr("golab2017.api.detail.error", []string{"golab2017"}, 1)
 		return
 	}
 
 	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), []string{"golab2017"}, 1)
-	statsD.Incr("golab2017.api.detail.called", []string{"golab2017"}, 1)
+	statsD.Incr("golab2017.api.detail.success", []string{"golab2017"}, 1)
 }
 
 func setupDependencies() {
