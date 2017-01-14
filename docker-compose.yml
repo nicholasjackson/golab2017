@@ -10,7 +10,7 @@ services:
       - currency
   currency:
     build: 
-      context: ./api
+      context: ./currency
       dockerfile: Dockerfile
     ports:
       - "9091:9091"
