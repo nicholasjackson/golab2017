@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
@@ -24,7 +25,10 @@ func main() {
 	}
 	file, _ := os.Create("./errors.log")
 
-	b := bench.New(50, 300*time.Second, 30*time.Second, 30*time.Second)
+	// set max idle connections to be equal to threads
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 50
+
+	b := bench.New(50, 60*time.Second, 30*time.Second, 30*time.Second)
 	b.AddOutput(0*time.Second, file, output.WriteErrorLogs)
 	b.AddOutput(0*time.Second, os.Stdout, output.WriteTabularData)
 	b.RunBenchmarks(request)
@@ -48,27 +52,24 @@ func request() error {
 }
 
 func requestList() error {
-	resp, err := http.Get("http://192.168.165.129:9090/list")
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-
-	if err != nil || resp.StatusCode != 200 {
-		return fmt.Errorf("Oops")
-	}
-
-	return nil
+	return httpGet("http://192.168.165.129:9090/list")
 }
 
 func requestDetail() error {
+	return httpGet("http://192.168.165.129:9090/detail")
+}
 
-	resp, err := http.Get("http://192.168.165.129:9090/detail")
+func httpGet(uri string) error {
+	resp, err := http.Get(uri)
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
+		_, _ = ioutil.ReadAll(resp.Body)
 	}
 
-	if err != nil || resp.StatusCode != 200 {
-		return fmt.Errorf("Oops")
+	if err != nil {
+		return fmt.Errorf("Error in requestDetail: %v", err)
+	} else if resp != nil && resp.StatusCode != 200 {
+		return fmt.Errorf("Error in requestDetail Status code: %v", resp.StatusCode)
 	}
 
 	return nil

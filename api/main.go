@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -64,6 +65,7 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer res.Body.Close()
+	_, _ = ioutil.ReadAll(res.Body)
 
 	err = json.NewEncoder(rw).Encode(kittens[0])
 	if err != nil {
