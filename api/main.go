@@ -30,6 +30,8 @@ var kittens = []kitten{
 }
 
 func main() {
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 250
+
 	setupDependencies()
 	statsD.Incr("golab2017.api.start", []string{"golab2017"}, 1)
 

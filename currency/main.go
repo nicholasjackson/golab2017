@@ -11,7 +11,7 @@ import (
 	"github.com/DataDog/datadog-go/statsd"
 )
 
-var calls = 0.0
+var totalSleepTime = 0.0
 var sleepTime = 0.0
 
 var statsD *statsd.Client
@@ -52,12 +52,12 @@ func handle(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	time.Sleep(time.Duration(sleepTime*calls) * time.Millisecond)
+	time.Sleep(time.Duration(totalSleepTime) * time.Millisecond)
 
 	statsD.Timing("golab2017.currency.timing", time.Now().Sub(startTime), []string{"golab2017"}, 1)
 	statsD.Incr("golab2017.currency.success", []string{"golab2017"}, 1)
 
-	calls++
+	totalSleepTime += sleepTime
 }
 
 func setupDependencies() {

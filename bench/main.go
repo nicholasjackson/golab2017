@@ -15,6 +15,13 @@ import (
 var mutex sync.Mutex
 var requestType = 0
 
+const (
+	connections = 250
+	duration    = 300 * time.Second
+	rampUpTime  = 30 * time.Second
+	timeout     = 30 * time.Second
+)
+
 func main() {
 	mutex = sync.Mutex{}
 
@@ -26,9 +33,9 @@ func main() {
 	file, _ := os.Create("./errors.log")
 
 	// set max idle connections to be equal to threads
-	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 50
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = connections
 
-	b := bench.New(50, 60*time.Second, 30*time.Second, 30*time.Second)
+	b := bench.New(connections, duration, rampUpTime, timeout)
 	b.AddOutput(0*time.Second, file, output.WriteErrorLogs)
 	b.AddOutput(0*time.Second, os.Stdout, output.WriteTabularData)
 	b.RunBenchmarks(request)
