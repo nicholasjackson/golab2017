@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
+	"github.com/nicholasjackson/loadbalancer"
 )
 
 var statsD *statsd.Client
+var client *loadbalancer.Client
 
 type kitten struct {
 	Name          string `json:"name"`
@@ -58,26 +61,37 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 
 	//get currency
-	res, err := http.Get("http://currency:9091/currency")
-	if err != nil {
-		fmt.Println(err)
+	err := client.Do(func(endpoint url.URL) error {
+		res, err := http.Get("http://currency:9091/currency")
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+		_, _ = ioutil.ReadAll(res.Body)
 
-		rw.WriteHeader(http.StatusInternalServerError)
-		statsD.Incr("golab2017.api.detail.error", []string{"golab2017"}, 1)
-		return
-	}
-	defer res.Body.Close()
-	_, _ = ioutil.ReadAll(res.Body)
+		return json.NewEncoder(rw).Encode(kittens[0])
+	})
 
-	err = json.NewEncoder(rw).Encode(kittens[0])
 	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
+		errors := err.(loadbalancer.ClientError)
+
+		for _, e := range errors.Errors() {
+			switch e.Error() {
+			case loadbalancer.ErrorTimeout:
+				statsD.Incr("golab2017.api.detail.currency.timeout", []string{"golab2017"}, 1)
+			case loadbalancer.ErrorCircuitOpen:
+				statsD.Incr("golab2017.api.detail.currency.circuitopen", []string{"golab2017"}, 1)
+			default:
+				statsD.Incr("golab2017.api.detail.currency.error", []string{"golab2017"}, 1)
+			}
+		}
+
 		statsD.Incr("golab2017.api.detail.error", []string{"golab2017"}, 1)
-		return
+	} else {
+		statsD.Incr("golab2017.api.detail.success", []string{"golab2017"}, 1)
 	}
 
 	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), []string{"golab2017"}, 1)
-	statsD.Incr("golab2017.api.detail.success", []string{"golab2017"}, 1)
 }
 
 func setupDependencies() {
@@ -86,4 +100,19 @@ func setupDependencies() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	u, _ := url.Parse("http://currency:9091/currency")
+
+	client = loadbalancer.NewClient(
+		loadbalancer.Config{
+			Timeout:                300 * time.Millisecond,
+			MaxConcurrentRequests:  250,
+			ErrorPercentThreshold:  50,
+			DefaultVolumeThreshold: 20,
+			Endpoints:              []url.URL{*u},
+		},
+		&loadbalancer.RandomStrategy{},
+		&loadbalancer.ExponentialBackoff{},
+	)
+
 }
