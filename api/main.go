@@ -36,7 +36,7 @@ func main() {
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 250
 
 	setupDependencies()
-	statsD.Incr("golab2017.api.start", []string{"golab2017"}, 1)
+	statsD.Incr("golab2017.api.start", nil, 1)
 
 	http.DefaultServeMux.HandleFunc("/list", handleList)
 	http.DefaultServeMux.HandleFunc("/detail", handleDetail)
@@ -49,12 +49,12 @@ func handleList(rw http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(rw).Encode(kittens)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
-		statsD.Incr("golab2017.api.list.error", []string{"golab2017"}, 1)
+		statsD.Incr("golab2017.api.list.error", nil, 1)
 		return
 	}
 
-	statsD.Timing("golab2017.api.list.timing", time.Now().Sub(startTime), []string{"golab2017"}, 1)
-	statsD.Incr("golab2017.api.list.success", []string{"golab2017"}, 1)
+	statsD.Timing("golab2017.api.list.timing", time.Now().Sub(startTime), nil, 1)
+	statsD.Incr("golab2017.api.list.success", nil, 1)
 }
 
 func handleDetail(rw http.ResponseWriter, r *http.Request) {
@@ -74,29 +74,30 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		errors := err.(loadbalancer.ClientError)
+		fmt.Println(err)
 
 		for _, e := range errors.Errors() {
 			switch e.Error() {
 			case loadbalancer.ErrorTimeout:
-				statsD.Incr("golab2017.api.detail.currency.timeout", []string{"golab2017"}, 1)
+				statsD.Incr("golab2017.api.detail.currency.timeout", nil, 1)
 			case loadbalancer.ErrorCircuitOpen:
-				statsD.Incr("golab2017.api.detail.currency.circuitopen", []string{"golab2017"}, 1)
+				statsD.Incr("golab2017.api.detail.currency.circuitopen", nil, 1)
 			default:
-				statsD.Incr("golab2017.api.detail.currency.error", []string{"golab2017"}, 1)
+				statsD.Incr("golab2017.api.detail.currency.error", nil, 1)
 			}
 		}
 
-		statsD.Incr("golab2017.api.detail.error", []string{"golab2017"}, 1)
+		statsD.Incr("golab2017.api.detail.error", nil, 1)
 	} else {
-		statsD.Incr("golab2017.api.detail.success", []string{"golab2017"}, 1)
+		statsD.Incr("golab2017.api.detail.success", nil, 1)
 	}
 
-	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), []string{"golab2017"}, 1)
+	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), nil, 1)
 }
 
 func setupDependencies() {
 	var err error
-	statsD, err = statsd.New("golab2017.demo.gs:9125")
+	statsD, err = statsd.New("statsd:9125")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -105,11 +106,16 @@ func setupDependencies() {
 
 	client = loadbalancer.NewClient(
 		loadbalancer.Config{
-			Timeout:                300 * time.Millisecond,
-			MaxConcurrentRequests:  250,
+			Timeout:                600 * time.Millisecond,
+			MaxConcurrentRequests:  500,
 			ErrorPercentThreshold:  50,
 			DefaultVolumeThreshold: 20,
 			Endpoints:              []url.URL{*u},
+			StatsD: loadbalancer.StatsD{
+				Enabled: true,
+				Server:  "statsd:9125",
+				Prefix:  "golab.hystrix",
+			},
 		},
 		&loadbalancer.RandomStrategy{},
 		&loadbalancer.ExponentialBackoff{},
