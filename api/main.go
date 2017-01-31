@@ -73,20 +73,6 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		errors := err.(loadbalancer.ClientError)
-		fmt.Println(err)
-
-		for _, e := range errors.Errors() {
-			switch e.Error() {
-			case loadbalancer.ErrorTimeout:
-				statsD.Incr("golab2017.api.detail.currency.timeout", nil, 1)
-			case loadbalancer.ErrorCircuitOpen:
-				statsD.Incr("golab2017.api.detail.currency.circuitopen", nil, 1)
-			default:
-				statsD.Incr("golab2017.api.detail.currency.error", nil, 1)
-			}
-		}
-
 		statsD.Incr("golab2017.api.detail.error", nil, 1)
 	} else {
 		statsD.Incr("golab2017.api.detail.success", nil, 1)
@@ -114,11 +100,13 @@ func setupDependencies() {
 			StatsD: loadbalancer.StatsD{
 				Enabled: true,
 				Server:  "statsd:9125",
-				Prefix:  "golab.hystrix",
+				Prefix:  "golab2017.api.detail.currency",
 			},
 		},
 		&loadbalancer.RandomStrategy{},
 		&loadbalancer.ExponentialBackoff{},
 	)
 
+	lbStats, _ := loadbalancer.NewDogStatsD(url.URL{Host: "statsd:9125"})
+	client.RegisterStats(lbStats)
 }
