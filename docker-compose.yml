@@ -8,23 +8,32 @@ services:
       - "9090:9090"
     links:
       - currency
+      - currencyslow
       - statsd
+    environment:
+      - MODE
   currency:
     build: 
       context: ./currency
       dockerfile: Dockerfile
     ports:
       - "9091:9091"
+  currencyslow:
+    build: 
+      context: ./currency
+      dockerfile: Dockerfile
+    ports:
+      - "9092:9091"
     environment:
       - SLEEP_TIME
-    links:
-      - statsd
   prometheus:
     image: prom/prometheus
     links:
       - statsd
     volumes: 
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9000:9090"
   statsd:
     image: prom/statsd-exporter
   grafana:

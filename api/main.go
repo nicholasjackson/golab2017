@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
+	"github.com/nicholasjackson/loadbalancer"
 )
 
 var statsD *statsd.Client
+var client *loadbalancer.Client
+var urls []url.URL
 
 type kitten struct {
 	Name          string `json:"name"`
@@ -30,7 +35,7 @@ var kittens = []kitten{
 }
 
 func main() {
-	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 250
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 500
 
 	setupDependencies()
 	statsD.Incr("golab2017.api.start", nil, 1)
@@ -55,29 +60,62 @@ func handleList(rw http.ResponseWriter, r *http.Request) {
 }
 
 func handleDetail(rw http.ResponseWriter, r *http.Request) {
+	var err error
 	startTime := time.Now()
 
-	//get currency
-	res, err := http.Get("http://currency:9091/currency")
-	if err != nil {
+	if os.Getenv("MODE") == "breaker" {
+		err = getCurrencyLB(rw)
+	} else {
+		err = getCurrency(rw, urls[1])
 		fmt.Println(err)
+	}
 
-		rw.WriteHeader(http.StatusInternalServerError)
+	if err != nil {
 		statsD.Incr("golab2017.api.detail.error", nil, 1)
-		return
+	} else {
+		statsD.Incr("golab2017.api.detail.success", nil, 1)
+	}
+
+	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), nil, 1)
+}
+
+func getCurrencyLB(rw http.ResponseWriter) error {
+	}
+
+	if err != nil {
+		statsD.Incr("golab2017.api.detail.error", nil, 1)
+	} else {
+		statsD.Incr("golab2017.api.detail.success", nil, 1)
+	}
+
+	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), nil, 1)
+}
+
+func getCurrencyLB(rw http.ResponseWriter) error {
+	c := client.Clone() // clone the client
+
+	//get currency
+	err := c.Do(func(endpoint url.URL) error {
+		return getCurrency(rw, endpoint)
+	})
+
+	return err
+}
+
+func getCurrency(rw http.ResponseWriter, endpoint url.URL) error {
+	res, err := http.Get(endpoint.String())
+	if err != nil {
+		return err
 	}
 	defer res.Body.Close()
 	_, _ = ioutil.ReadAll(res.Body)
 
-	err = json.NewEncoder(rw).Encode(kittens[0])
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		statsD.Incr("golab2017.api.detail.error", nil, 1)
-		return
-	}
+	return json.NewEncoder(rw).Encode(kittens[0])
+}
 
-	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), nil, 1)
-	statsD.Incr("golab2017.api.detail.success", nil, 1)
+func getURL(uri string) url.URL {
+	u, _ := url.Parse(uri)
+	return *u
 }
 
 func setupDependencies() {
@@ -86,4 +124,29 @@ func setupDependencies() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	urls = []url.URL{
+		getURL("http://currency:9091/currency"),
+		getURL("http://currencyslow:9091/currency"),
+	}
+
+	client = loadbalancer.NewClient(
+		loadbalancer.Config{
+			Retries:                5,
+			RetryDelay:             100 * time.Millisecond,
+			Timeout:                600 * time.Millisecond,
+			MaxConcurrentRequests:  500,
+			ErrorPercentThreshold:  50,
+			DefaultVolumeThreshold: 1000,
+			Endpoints:              urls,
+			StatsD: loadbalancer.StatsD{
+				Prefix: "golab2017.api.detail.currency",
+			},
+		},
+		&loadbalancer.RoundRobinStrategy{},
+		&loadbalancer.ExponentialBackoff{},
+	)
+
+	lbStats, _ := loadbalancer.NewDogStatsD(url.URL{Host: "statsd:9125"})
+	client.RegisterStats(lbStats)
 }

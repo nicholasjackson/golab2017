@@ -5,3 +5,4 @@ import:
   subpackages:
   - statsd
 - package: github.com/nicholasjackson/bench
+- package: github.com/nicholasjackson/loadbalancer

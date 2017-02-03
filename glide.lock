@@ -1,12 +1,26 @@
-hash: fb4c6b090c7d873fd98d5e23ac348a1eb9116de5bb6cac75e634d22c92a2e626
-updated: 2017-01-31T16:26:15.382986256Z
+hash: 6644ccdc5e2eb19f6435e64b7f2b3677097b47a9ff9ca112d56803ef721ecfb6
+updated: 2017-02-03T09:08:29.188645518Z
 imports:
+- name: github.com/afex/hystrix-go
+  version: 39520ddd07a9d9a071d615f7476798659f5a3b89
+  subpackages:
+  - hystrix
+  - hystrix/metric_collector
+  - hystrix/rolling
 - name: github.com/blendlabs/go-exception
   version: 3016f62c905ec9aab528104ef58ac4f5cd395a22
 - name: github.com/DataDog/datadog-go
   version: 909c02b65dd8a52e8fa6072db9752a112227cf21
   subpackages:
   - statsd
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/eapache/go-resiliency
+  version: 6800482f2c813e689c88b7ed3282262385011890
+  subpackages:
+  - retrier
 - name: github.com/fatih/color
   version: 34e4ee095d12986a2cef5ddb9aeb3b8cfcfea17c
 - name: github.com/golang/freetype
@@ -25,12 +39,25 @@ imports:
   - output
   - results
   - semaphore
+- name: github.com/nicholasjackson/loadbalancer
+  version: c4741b9a801aa54263285b9d528b0155554e1c32
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/objx
+  version: cbeaeb16a013161a98496fad62933b1d21786672
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
+  - mock
 - name: github.com/wcharczuk/go-chart
   version: fc2973067ce43455507ea5f9aa9814aabbf8f2ca
   subpackages:
   - drawing
 - name: golang.org/x/image
-  version: 83686c547965220f8b5d75e83ddc67d73420a89f
+  version: 55ae12acc992ce6034ae993e4212fd6f8057b1c6
   subpackages:
   - draw
   - font
