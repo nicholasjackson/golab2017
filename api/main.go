@@ -80,18 +80,6 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 }
 
 func getCurrencyLB(rw http.ResponseWriter) error {
-	}
-
-	if err != nil {
-		statsD.Incr("golab2017.api.detail.error", nil, 1)
-	} else {
-		statsD.Incr("golab2017.api.detail.success", nil, 1)
-	}
-
-	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), nil, 1)
-}
-
-func getCurrencyLB(rw http.ResponseWriter) error {
 	c := client.Clone() // clone the client
 
 	//get currency
