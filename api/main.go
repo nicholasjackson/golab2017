@@ -33,7 +33,7 @@ var kittens = []kitten{
 }
 
 func main() {
-	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 250
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 500
 
 	setupDependencies()
 	statsD.Incr("golab2017.api.start", nil, 1)
@@ -59,10 +59,11 @@ func handleList(rw http.ResponseWriter, r *http.Request) {
 
 func handleDetail(rw http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
+	c := client.Clone() // clone the client
 
 	//get currency
-	err := client.Do(func(endpoint url.URL) error {
-		res, err := http.Get("http://currency:9091/currency")
+	err := c.Do(func(endpoint url.URL) error {
+		res, err := http.Get(endpoint.String())
 		if err != nil {
 			return err
 		}
@@ -81,6 +82,11 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), nil, 1)
 }
 
+func getURL(uri string) url.URL {
+	u, _ := url.Parse(uri)
+	return *u
+}
+
 func setupDependencies() {
 	var err error
 	statsD, err = statsd.New("statsd:9125")
@@ -88,22 +94,25 @@ func setupDependencies() {
 		fmt.Println(err)
 	}
 
-	u, _ := url.Parse("http://currency:9091/currency")
+	urls := []url.URL{
+		getURL("http://currency1:9091/currency"),
+		getURL("http://currency2:9092/currency"),
+	}
 
 	client = loadbalancer.NewClient(
 		loadbalancer.Config{
+			Retries:                5,
+			RetryDelay:             100 * time.Millisecond,
 			Timeout:                600 * time.Millisecond,
 			MaxConcurrentRequests:  500,
 			ErrorPercentThreshold:  50,
-			DefaultVolumeThreshold: 20,
-			Endpoints:              []url.URL{*u},
+			DefaultVolumeThreshold: 1000,
+			Endpoints:              urls,
 			StatsD: loadbalancer.StatsD{
-				Enabled: true,
-				Server:  "statsd:9125",
-				Prefix:  "golab2017.api.detail.currency",
+				Prefix: "golab2017.api.detail.currency",
 			},
 		},
-		&loadbalancer.RandomStrategy{},
+		&loadbalancer.RoundRobinStrategy{},
 		&loadbalancer.ExponentialBackoff{},
 	)
 

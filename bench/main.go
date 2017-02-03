@@ -74,6 +74,10 @@ func httpGet(uri string) error {
 	}
 
 	if err != nil {
+		fmt.Println(err)
+	}
+
+	if err != nil {
 		return fmt.Errorf("Error in requestDetail: %v", err)
 	} else if resp != nil && resp.StatusCode != 200 {
 		return fmt.Errorf("Error in requestDetail Status code: %v", resp.StatusCode)

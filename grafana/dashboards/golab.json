@@ -74,7 +74,7 @@
   },
   "refresh": "30s",
   "schemaVersion": 13,
-  "version": 2,
+  "version": 3,
   "links": [],
   "gnetId": null,
   "rows": [
@@ -135,10 +135,10 @@
           "timeShift": null,
           "title": "List :: Calls",
           "tooltip": {
+            "msResolution": false,
             "shared": true,
             "sort": 0,
-            "value_type": "individual",
-            "msResolution": false
+            "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
@@ -208,10 +208,10 @@
           "timeShift": null,
           "title": "List :: Timing",
           "tooltip": {
+            "msResolution": false,
             "shared": true,
             "sort": 0,
-            "value_type": "individual",
-            "msResolution": false
+            "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
@@ -283,7 +283,7 @@
               "expr": "rate(golab2017_api_detail_success_counter[60s])",
               "interval": "30s",
               "intervalFactor": 1,
-              "legendFormat": "",
+              "legendFormat": "Success",
               "metric": "gola",
               "refId": "B",
               "step": 30
@@ -292,7 +292,7 @@
               "expr": "rate(golab2017_api_detail_error_counter[60s])",
               "interval": "30s",
               "intervalFactor": 1,
-              "legendFormat": "",
+              "legendFormat": "Error",
               "metric": "gola",
               "refId": "A",
               "step": 30
@@ -303,10 +303,10 @@
           "timeShift": null,
           "title": "Detail :: Calls",
           "tooltip": {
+            "msResolution": false,
             "shared": true,
             "sort": 0,
-            "value_type": "individual",
-            "msResolution": false
+            "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
@@ -376,10 +376,10 @@
           "timeShift": null,
           "title": "Detail :: Timing",
           "tooltip": {
+            "msResolution": false,
             "shared": true,
             "sort": 0,
-            "value_type": "individual",
-            "msResolution": false
+            "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
@@ -459,10 +459,10 @@
           "timeShift": null,
           "title": "Currency  :: Calls",
           "tooltip": {
+            "msResolution": false,
             "shared": true,
             "sort": 0,
-            "value_type": "individual",
-            "msResolution": false
+            "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
@@ -536,10 +536,10 @@
           "timeShift": null,
           "title": "Currency  :: Timer",
           "tooltip": {
+            "msResolution": false,
             "shared": true,
             "sort": 0,
-            "value_type": "individual",
-            "msResolution": false
+            "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
@@ -586,6 +586,7 @@
           "fill": 1,
           "id": 7,
           "legend": {
+            "alignAsTable": true,
             "avg": false,
             "current": false,
             "max": false,
@@ -595,7 +596,7 @@
             "values": false
           },
           "lines": true,
-          "linewidth": 1,
+          "linewidth": 2,
           "links": [],
           "nullPointMode": "null",
           "percentage": false,
@@ -608,31 +609,48 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "rate(golab2017_api_detail_currency_circuitopen_counter{}[60s])",
-              "intervalFactor": 2,
-              "metric": "golab2017_api_detail_currency_circuitopen_counter",
-              "refId": "A",
-              "step": 2,
-              "legendFormat": "Circuit Open"
+              "expr": "rate(golab2017_api_detail_currency_called_counter{}[30s])",
+              "hide": false,
+              "intervalFactor": 1,
+              "legendFormat": "Circuit Called {{server}}",
+              "metric": "golab2017_api_detail_currency_called_counter",
+              "refId": "C",
+              "step": 1
             },
             {
-              "expr": "rate(golab2017_api_detail_currency_error_counter{}[60s])",
-              "intervalFactor": 2,
-              "metric": "golab2017_api_detail_currency_error_counter",
+              "expr": "rate(golab2017_api_detail_currency_circuitopen_counter{}[30s])",
+              "intervalFactor": 1,
+              "legendFormat": "Circuit Open {{server}}",
+              "metric": "golab2017_api_detail_currency_circuitopen_counter",
+              "refId": "A",
+              "step": 1
+            },
+            {
+              "expr": "rate(golab2017_api_detail_currency_timeout_counter{}[30s])",
+              "intervalFactor": 1,
+              "legendFormat": "Circuit Timeout {{server}}",
+              "metric": "golab2017_api_detail_currency_timeout_counter",
               "refId": "B",
-              "step": 2,
-              "legendFormat": "Circuit Error"
+              "step": 1
+            },
+            {
+              "expr": "rate(golab2017_api_detail_currency_success_counter{}[30s])",
+              "intervalFactor": 1,
+              "legendFormat": "Circuit Success {{server}}",
+              "metric": "golab2017_api_detail_currency_success_counter",
+              "refId": "D",
+              "step": 1
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Circuit Breaker",
+          "title": "Currency Client",
           "tooltip": {
+            "msResolution": false,
             "shared": true,
             "sort": 0,
-            "value_type": "individual",
-            "msResolution": false
+            "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
@@ -659,11 +677,85 @@
               "show": true
             }
           ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "${DS_PROMETHEUS}",
+          "fill": 1,
+          "id": 8,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false,
+            "alignAsTable": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "golab2017_api_detail_currency_timing_timer",
+              "intervalFactor": 1,
+              "metric": "golab2017_api_detail_currency_timing_timer",
+              "refId": "A",
+              "step": 1,
+              "legendFormat": "Currency Client Timing {{server}} {{quantile}}"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Currency Client Timing",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "links": []
         }
       ],
       "showTitle": false,
       "titleSize": "h6",
-      "height": 250,
+      "height": 367,
       "repeat": null,
       "repeatRowId": null,
       "repeatIteration": null,

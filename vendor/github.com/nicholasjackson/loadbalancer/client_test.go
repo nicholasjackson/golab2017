@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/afex/hystrix-go/hystrix"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -37,6 +38,7 @@ func setupClient(retryCount int) {
 	loadbalancingStrategy.On("NextEndpoint").Return(getURL)
 	loadbalancingStrategy.On("GetEndpoints").Return(urls)
 	loadbalancingStrategy.On("Length").Return(len(urls))
+	loadbalancingStrategy.On("Clone")
 
 	var retries []time.Duration
 	for i := 0; i < retryCount; i++ {
@@ -59,9 +61,8 @@ func setupClient(retryCount int) {
 			ErrorPercentThreshold:  50,
 			DefaultVolumeThreshold: 2,
 			StatsD: StatsD{
-				Enabled: true,
-				Prefix:  "myapp",
-				Tags:    []string{"production"},
+				Prefix: "myapp",
+				Tags:   []string{"env:production"},
 			},
 		},
 		&loadbalancingStrategy,
@@ -69,6 +70,8 @@ func setupClient(retryCount int) {
 	)
 
 	client.RegisterStats(&mockStats)
+
+	hystrix.Flush()
 }
 
 func TestNewRailsSessionSetsRetriesToURLsLengthIfNotSet(t *testing.T) {
@@ -122,9 +125,10 @@ func TestClientCallIncrementsStats(t *testing.T) {
 		return nil
 	})
 
+	tags := append(client.config.StatsD.Tags, "server:something_3232")
 	mockStats.AssertCalled(t,
 		"Increment",
-		"myapp.something_3232.called", client.config.StatsD.Tags, mock.Anything)
+		"myapp.called", tags, mock.Anything)
 }
 
 func TestClientCallTimingStats(t *testing.T) {
@@ -133,9 +137,10 @@ func TestClientCallTimingStats(t *testing.T) {
 		return nil
 	})
 
+	tags := append(client.config.StatsD.Tags, "server:something_3232")
 	mockStats.AssertCalled(t,
 		"Timing",
-		"myapp.something_3232.timing", client.config.StatsD.Tags, mock.Anything, mock.Anything)
+		"myapp.timing", tags, mock.Anything, mock.Anything)
 }
 
 func TestClientRetriesWithDifferentURLAndReturnsError(t *testing.T) {
@@ -147,10 +152,7 @@ func TestClientRetriesWithDifferentURLAndReturnsError(t *testing.T) {
 		return fmt.Errorf("aaah")
 	})
 
-	clientError := err.(ClientError)
-
-	assert.Equal(t, 3, len(urls))
-	assert.Equal(t, 3, len(clientError.Errors()))
+	assert.NotNil(t, err)
 }
 
 func TestSuccessIncrementsStats(t *testing.T) {
@@ -159,9 +161,10 @@ func TestSuccessIncrementsStats(t *testing.T) {
 		return nil
 	})
 
+	tags := append(client.config.StatsD.Tags, "server:something_3232")
 	mockStats.AssertCalled(t,
 		"Increment",
-		"myapp.something_3232.success", client.config.StatsD.Tags, mock.Anything)
+		"myapp.called", tags, mock.Anything)
 }
 
 func TestTimeoutReturnsError(t *testing.T) {
@@ -174,7 +177,7 @@ func TestTimeoutReturnsError(t *testing.T) {
 
 	clientError := err.(ClientError)
 
-	assert.Equal(t, ErrorTimeout, clientError.Errors()[0].Error())
+	assert.Equal(t, ErrorTimeout, clientError.Message)
 }
 
 func TestTimeoutIncrementsStats(t *testing.T) {
@@ -184,13 +187,14 @@ func TestTimeoutIncrementsStats(t *testing.T) {
 		return nil
 	})
 
+	tags := append(client.config.StatsD.Tags, "server:something_3232")
 	mockStats.AssertCalled(t,
 		"Increment",
-		"myapp.something_3232.timeout", client.config.StatsD.Tags, mock.Anything)
+		"myapp.timeout", tags, mock.Anything)
 }
 
 func TestOpenCircuitReturnsError(t *testing.T) {
-	setupClient(2)
+	setupClient(4)
 
 	err := client.Do(func(endpoint url.URL) error {
 		time.Sleep(150 * time.Millisecond)
@@ -199,19 +203,38 @@ func TestOpenCircuitReturnsError(t *testing.T) {
 
 	clientError := err.(ClientError)
 
-	assert.Equal(t, ErrorTimeout, clientError.Errors()[0].Error())
-	assert.Equal(t, ErrorTimeout, clientError.Errors()[1].Error())
-	assert.Equal(t, ErrorCircuitOpen, clientError.Errors()[2].Error())
+	assert.Equal(t, ErrorCircuitOpen, clientError.Message)
 }
 
 func TestOpenCircuitIncrementsStats(t *testing.T) {
-	setupClient(2)
+	setupClient(5)
 	client.Do(func(endpoint url.URL) error {
 		time.Sleep(150 * time.Millisecond)
 		return nil
 	})
 
+	tags1 := append(client.config.StatsD.Tags, "server:something_3232")
+	tags2 := append(client.config.StatsD.Tags, "server:somethingelse_2323")
 	mockStats.AssertCalled(t,
 		"Increment",
-		"myapp.something_3232.circuitopen", client.config.StatsD.Tags, mock.Anything)
+		"myapp.timeout", tags1, mock.Anything)
+	mockStats.AssertCalled(t,
+		"Increment",
+		"myapp.timeout", tags2, mock.Anything)
+	mockStats.AssertCalled(t,
+		"Increment",
+		"myapp.circuitopen", tags1, mock.Anything)
+}
+
+func TestCloneCreatesACloneOfTheClient(t *testing.T) {
+	setupClient(0)
+	c := client.Clone()
+
+	assert.NotEqual(t, client, c)
+	loadbalancingStrategy.AssertCalled(t, "Clone")
+
+	assert.Equal(t, client.config, c.config)
+	assert.Equal(t, client.backoffStrategy, c.backoffStrategy)
+	assert.Equal(t, client.statsCollection, c.statsCollection)
+	assert.Equal(t, client.retry, c.retry)
 }

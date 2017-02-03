@@ -7,14 +7,21 @@ services:
     ports:
       - "9090:9090"
     links:
-      - currency
+      - currency1
+      - currency2
       - statsd
-  currency:
+  currency1:
     build: 
       context: ./currency
       dockerfile: Dockerfile
     ports:
       - "9091:9091"
+  currency2:
+    build: 
+      context: ./currency
+      dockerfile: Dockerfile
+    ports:
+      - "9092:9092"
     environment:
       - SLEEP_TIME
   prometheus:
@@ -23,6 +30,8 @@ services:
       - statsd
     volumes: 
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9000:9090"
   statsd:
     image: prom/statsd-exporter
   grafana:
