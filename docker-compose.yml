@@ -7,21 +7,23 @@ services:
     ports:
       - "9090:9090"
     links:
-      - currency1
-      - currency2
+      - currency
+      - currencyslow
       - statsd
-  currency1:
+    environment:
+      - MODE
+  currency:
     build: 
       context: ./currency
       dockerfile: Dockerfile
     ports:
       - "9091:9091"
-  currency2:
+  currencyslow:
     build: 
       context: ./currency
       dockerfile: Dockerfile
     ports:
-      - "9092:9092"
+      - "9092:9091"
     environment:
       - SLEEP_TIME
   prometheus:

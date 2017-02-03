@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
@@ -14,6 +15,7 @@ import (
 
 var statsD *statsd.Client
 var client *loadbalancer.Client
+var urls []url.URL
 
 type kitten struct {
 	Name          string `json:"name"`
@@ -58,20 +60,15 @@ func handleList(rw http.ResponseWriter, r *http.Request) {
 }
 
 func handleDetail(rw http.ResponseWriter, r *http.Request) {
+	var err error
 	startTime := time.Now()
-	c := client.Clone() // clone the client
 
-	//get currency
-	err := c.Do(func(endpoint url.URL) error {
-		res, err := http.Get(endpoint.String())
-		if err != nil {
-			return err
-		}
-		defer res.Body.Close()
-		_, _ = ioutil.ReadAll(res.Body)
-
-		return json.NewEncoder(rw).Encode(kittens[0])
-	})
+	if os.Getenv("MODE") == "breaker" {
+		err = getCurrencyLB(rw)
+	} else {
+		err = getCurrency(rw, urls[1])
+		fmt.Println(err)
+	}
 
 	if err != nil {
 		statsD.Incr("golab2017.api.detail.error", nil, 1)
@@ -80,6 +77,28 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	statsD.Timing("golab2017.api.detail.timing", time.Now().Sub(startTime), nil, 1)
+}
+
+func getCurrencyLB(rw http.ResponseWriter) error {
+	c := client.Clone() // clone the client
+
+	//get currency
+	err := c.Do(func(endpoint url.URL) error {
+		return getCurrency(rw, endpoint)
+	})
+
+	return err
+}
+
+func getCurrency(rw http.ResponseWriter, endpoint url.URL) error {
+	res, err := http.Get(endpoint.String())
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	_, _ = ioutil.ReadAll(res.Body)
+
+	return json.NewEncoder(rw).Encode(kittens[0])
 }
 
 func getURL(uri string) url.URL {
@@ -94,9 +113,9 @@ func setupDependencies() {
 		fmt.Println(err)
 	}
 
-	urls := []url.URL{
-		getURL("http://currency1:9091/currency"),
-		getURL("http://currency2:9092/currency"),
+	urls = []url.URL{
+		getURL("http://currency:9091/currency"),
+		getURL("http://currencyslow:9091/currency"),
 	}
 
 	client = loadbalancer.NewClient(
