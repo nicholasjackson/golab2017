@@ -66,7 +66,7 @@ func handleDetail(rw http.ResponseWriter, r *http.Request) {
 	if os.Getenv("MODE") == "breaker" {
 		err = getCurrencyLB(rw)
 	} else {
-		err = getCurrency(rw, urls[1])
+		err = getCurrency(rw, urls[0])
 		fmt.Println(err)
 	}
 
@@ -114,13 +114,15 @@ func setupDependencies() {
 	}
 
 	urls = []url.URL{
-		getURL("http://currency:9091/currency"),
 		getURL("http://currencyslow:9091/currency"),
+	}
+
+	if os.Getenv("SERVERS") == "2" {
+		getURL("http://currency:9091/currency")
 	}
 
 	client = loadbalancer.NewClient(
 		loadbalancer.Config{
-			Retries:                5,
 			RetryDelay:             100 * time.Millisecond,
 			Timeout:                600 * time.Millisecond,
 			MaxConcurrentRequests:  500,
